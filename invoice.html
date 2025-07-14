@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EV Scooter Invoice</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { width: 100%; background: #fff; padding: 0; box-shadow: none; border: 1px solid #000; }
+    .form-section, .invoice-header, .footer { margin: 20px; }
+    table { width: calc(100% - 40px); margin: 0 20px; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+    th, td { border: 1px solid #000; padding: 8px; text-align: left; vertical-align: top; word-wrap: break-word; }
+    th { background-color: #f0f0f0; }
+    .summary { margin: 0 20px; }
+    .summary td { border: none; text-align: right; }
+    .summary tr td:first-child { text-align: left; }
+    input, textarea { width: 100%; padding: 8px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 20px; margin-top: 20px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #218838; }
+    .logo-bar { display: flex; align-items: center; justify-content: space-between; margin: 20px; }
+    .logo-bar img { height: 60px; }
+    .logo-bar h2 { margin: 0; color: #fff; background: linear-gradient(to right, #168b43, #1f9751); padding: 10px 20px; border-radius: 0 50px 50px 0; font-size: 20px; }
+    #invoice-output { border-top: 4px solid #168b43; padding-top: 20px; }
+    .hide-on-pdf { display: inline-block; }
+    @media print {
+      .hide-on-pdf { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="invoice-container">
+  <div class="form-section" id="form-fields">
+    <div class="logo-bar">
+      <img src="./img/Uev.png" alt="EvUrjavahan Logo">
+      <h2>TAX INVOICE</h2>
+    </div>
+    <h3>Enter EV Scooter Details</h3>
+    <label>Invoice Number: <input type="text" id="invoice-number" value="INV-001"></label>
+    <label>Invoice Date: <input type="date" id="invoice-date" value="2025-07-14"></label>
+    <label>CHASIS NO: <input type="text" id="chasis" value="TEGEM0325ENG00309"></label>
+    <label>MOTOR NO: <input type="text" id="motor" value="TGEM12W0325ENG0239"></label>
+    <label>CONTROLLER NO: <input type="text" id="controller" value="T40GEM0325ENG0365"></label>
+    <label>COLOUR: <input type="text" id="colour" value="WHITE"></label>
+    <label>BATTERY NO(s): <textarea id="battery">22509641, 22509642, 22509643, 22509644, 22509645, 22507511</textarea></label>
+    <label>CHARGER NO: <input type="text" id="charger" value="VIM0482"></label>
+    <label>HSN: <input type="text" id="hsn" value="87119091"></label>
+    <label>QTY: <input type="number" id="qty" value="1"></label>
+    <label>UOM: <input type="text" id="uom" value="PCS"></label>
+    <label>Price: <input type="number" id="price" value="48762.00"></label>
+    <label>Discount %: <input type="number" id="disc" value="0"></label>
+    <button onclick="generateInvoice()">Generate Invoice</button>
+  </div>
+
+  <div id="invoice-output" style="display: none">
+    <div class="invoice-header">
+      <div class="logo-bar">
+        <img src="./img/Uev.png" alt="EvUrjavahan Logo">
+        <h2>TAX INVOICE</h2>
+      </div>
+      <p><strong>Date:</strong> <span id="out-date"></span></p>
+      <p><strong>Invoice #:</strong> <span id="out-number"></span></p>
+    </div>
+
+    <table>
+      <tr>
+        <th style="width: 4%;">SN</th>
+        <th style="width: 34%;">Description of Goods</th>
+        <th style="width: 12%;">HSN</th>
+        <th style="width: 6%;">QTY.</th>
+        <th style="width: 8%;">UOM</th>
+        <th style="width: 14%;">PRICE</th>
+        <th style="width: 8%;">Disc%</th>
+        <th style="width: 14%;">Amount</th>
+      </tr>
+      <tr>
+        <td>1.</td>
+        <td id="out-desc"></td>
+        <td id="out-hsn"></td>
+        <td id="out-qty"></td>
+        <td id="out-uom"></td>
+        <td id="out-price"></td>
+        <td id="out-disc"></td>
+        <td id="out-total"></td>
+      </tr>
+    </table>
+
+    <table class="summary">
+      <tr><td><strong>Total Discount:</strong></td><td id="out-discount"></td></tr>
+      <tr><td><strong>Subtotal:</strong></td><td id="out-subtotal"></td></tr>
+      <tr><td><strong>GST (5%):</strong></td><td id="out-gst"></td></tr>
+      <tr><td><strong>Total:</strong></td><td><strong id="out-grand"></strong></td></tr>
+    </table>
+
+    <div class="footer">
+      <p>Thank you for your business!</p>
+      <p><strong>EV urjavahan</strong><br>Parsa 1KM East from Mushari Bazzar , Bhore vijaypur Road<br>Phone: +91-9264124078 | Email: contact@evurjavahan.in</p>
+    </div>
+
+    <button class="hide-on-pdf" onclick="downloadPDF()">Download PDF</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function generateInvoice() {
+  const invNum = document.getElementById("invoice-number").value;
+  const invDate = document.getElementById("invoice-date").value;
+  const chasis = document.getElementById("chasis").value;
+  const motor = document.getElementById("motor").value;
+  const controller = document.getElementById("controller").value;
+  const colour = document.getElementById("colour").value;
+  const battery = document.getElementById("battery").value;
+  const charger = document.getElementById("charger").value;
+  const hsn = document.getElementById("hsn").value;
+  const qty = parseFloat(document.getElementById("qty").value);
+  const uom = document.getElementById("uom").value;
+  const price = parseFloat(document.getElementById("price").value);
+  const disc = parseFloat(document.getElementById("disc").value);
+
+  const total = qty * price;
+  const discountAmt = (disc / 100) * total;
+  const subtotal = total - discountAmt;
+  const gst = subtotal * 0.05;
+  const grand = subtotal + gst;
+
+  const desc = `GEM PRO EV SCOOTER\nCHASIS NO: ${chasis}\nMOTOR NO: ${motor}\nCONTROLLER NO: ${controller}\nCOLOUR: ${colour}\nBATTERY NOs: ${battery}\nCHARGER NO: ${charger}`;
+
+  document.getElementById("out-number").innerText = invNum;
+  document.getElementById("out-date").innerText = invDate;
+  document.getElementById("out-desc").innerText = desc;
+  document.getElementById("out-hsn").innerText = hsn;
+  document.getElementById("out-qty").innerText = qty;
+  document.getElementById("out-uom").innerText = uom;
+  document.getElementById("out-price").innerText = `₹${price.toFixed(2)}`;
+  document.getElementById("out-disc").innerText = disc.toFixed(2);
+  document.getElementById("out-total").innerText = `₹${total.toFixed(2)}`;
+  document.getElementById("out-discount").innerText = `₹${discountAmt.toFixed(2)}`;
+  document.getElementById("out-subtotal").innerText = `₹${subtotal.toFixed(2)}`;
+  document.getElementById("out-gst").innerText = `₹${gst.toFixed(2)}`;
+  document.getElementById("out-grand").innerText = `₹${grand.toFixed(2)}`;
+
+  document.getElementById("invoice-output").style.display = "block";
+  document.getElementById("form-fields").style.display = "none";
+}
+
+function downloadPDF() {
+  const element = document.getElementById("invoice-container");
+  document.querySelector(".hide-on-pdf").style.display = "none";
+  html2pdf()
+    .set({
+      margin: [0, 0, 0, 0],
+      filename: 'EV-urjavahan.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    })
+    .from(element)
+    .save()
+    .then(() => {
+      document.getElementById("form-fields").style.display = "block";
+      document.querySelector(".hide-on-pdf").style.display = "inline-block";
+    });
+}
+</script>
+</body>
+</html>
